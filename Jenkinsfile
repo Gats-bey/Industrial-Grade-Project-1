@@ -14,8 +14,13 @@ pipeline {
     )
     booleanParam(
       name: 'DEPLOY_TO_DOCKER',
+      defaultValue: false,
+      description: 'Build and deploy to Docker container using direct Docker commands (8082)'
+    )
+    booleanParam(
+      name: 'DEPLOY_WITH_ANSIBLE',
       defaultValue: true,
-      description: 'Build Docker image and deploy to Docker container (8082)'
+      description: 'Deploy to Docker using Ansible automation (8082) - RECOMMENDED'
     )
   }
 
@@ -25,12 +30,16 @@ pipeline {
     WAR_NAME   = 'ABCtechnologies-1.0.war'
     APP_URL_VM = 'http://localhost:8080/ABCtechnologies-1.0/'
 
-    // Docker deploy settings
+    // Docker deploy settings (direct)
     DOCKER_IMAGE     = "igp1-app:${BUILD_NUMBER}"
     DOCKER_CONTAINER = 'igp1-app'
     DOCKER_HOST_PORT = '8082'
     DOCKER_CONT_PORT = '8080'
     APP_URL_DOCKER   = "http://localhost:${DOCKER_HOST_PORT}/"
+    
+    // Ansible settings
+    ANSIBLE_PLAYBOOK = '/opt/ansible-igp1/deploy-docker.yml'
+    ANSIBLE_INVENTORY = '/opt/ansible-igp1/inventory.ini'
   }
 
   stages {
@@ -64,7 +73,9 @@ pipeline {
       }
     }
 
-    // VM Tomcat Deploy
+    // -------------------------
+    // VM Tomcat Deploy (existing)
+    // -------------------------
     stage('Stage WAR for Deploy') {
       when { expression { params.DEPLOY_TO_VM_TOMCAT } }
       steps {
@@ -101,7 +112,9 @@ pipeline {
       }
     }
 
-    // Docker Build + Deploy
+    // -------------------------
+    // Docker Direct Deploy (Phase 3)
+    // -------------------------
     stage('Docker - Build Image') {
       when { expression { params.DEPLOY_TO_DOCKER } }
       steps {
@@ -153,11 +166,44 @@ pipeline {
         """
       }
     }
+
+    // -------------------------
+    // Ansible Deploy (Phase 4 - NEW!)
+    // -------------------------
+    stage('Deploy with Ansible') {
+      when { expression { params.DEPLOY_WITH_ANSIBLE } }
+      steps {
+        script {
+          echo "Deploying using Ansible playbook..."
+          sh """
+            ansible-playbook ${ANSIBLE_PLAYBOOK} \\
+              -i ${ANSIBLE_INVENTORY} \\
+              -e "build_number=${BUILD_NUMBER}" \\
+              -e "project_directory=${WORKSPACE}"
+          """
+        }
+      }
+    }
   }
 
   post {
     always {
       junit 'target/surefire-reports/*.xml'
+    }
+    success {
+      echo "✓ Build and deployment successful!"
+      script {
+        if (params.DEPLOY_WITH_ANSIBLE) {
+          echo "✓ Deployed via Ansible automation"
+        } else if (params.DEPLOY_TO_DOCKER) {
+          echo "✓ Deployed via direct Docker commands"
+        } else if (params.DEPLOY_TO_VM_TOMCAT) {
+          echo "✓ Deployed to VM Tomcat"
+        }
+      }
+    }
+    failure {
+      echo "✗ Build or deployment failed. Check logs above."
     }
   }
 }
