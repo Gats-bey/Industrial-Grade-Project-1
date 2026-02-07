@@ -83,7 +83,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'vm-tomcat' } }
       steps {
         sh """
-          set -e
           mkdir -p "${DEPLOY_DIR}"
           cp -f "target/${WAR_NAME}" "${DEPLOY_DIR}/${WAR_NAME}"
         """
@@ -101,7 +100,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'vm-tomcat' } }
       steps {
         sh """
-          set -e
           for i in \$(seq 1 12); do
             CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_VM}" || true)
             if [ "\$CODE" = "200" ]; then
@@ -124,7 +122,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
-          set -euo pipefail
           test -f Dockerfile
           test -f target/${WAR_NAME}
 
@@ -138,7 +135,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
-          set -euo pipefail
           echo "Stopping/removing any existing container named ${DOCKER_CONTAINER}..."
           docker rm -f "${DOCKER_CONTAINER}" >/dev/null 2>&1 || true
 
@@ -156,7 +152,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
-          set -e
           for i in \$(seq 1 18); do
             CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_DOCKER}" || true)
             if [ "\$CODE" = "200" ]; then
@@ -187,7 +182,6 @@ pipeline {
           echo "═══════════════════════════════════════════════"
         }
         sh """
-          set -euo pipefail
           ansible-playbook "${ANSIBLE_PLAYBOOK}" \\
             -i "${ANSIBLE_INVENTORY}" \\
             -e "build_number=${BUILD_NUMBER}" \\
@@ -200,7 +194,6 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'ansible' } }
       steps {
         sh """
-          set -e
           echo "[INFO] Checking app health after Ansible deployment: ${APP_URL_DOCKER}"
 
           for i in \$(seq 1 18); do
