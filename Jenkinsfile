@@ -7,20 +7,10 @@ pipeline {
   }
 
   parameters {
-    booleanParam(
-      name: 'DEPLOY_TO_VM_TOMCAT',
-      defaultValue: false,
-      description: 'Deploy WAR to VM-based Tomcat (8080)'
-    )
-    booleanParam(
-      name: 'DEPLOY_TO_DOCKER',
-      defaultValue: false,
-      description: 'Build and deploy to Docker container using direct Docker commands (8082)'
-    )
-    booleanParam(
-      name: 'DEPLOY_WITH_ANSIBLE',
-      defaultValue: true,
-      description: 'Deploy to Docker using Ansible automation (8082) - RECOMMENDED'
+    choice(
+      name: 'DEPLOYMENT_METHOD',
+      choices: ['ansible', 'docker-direct', 'vm-tomcat', 'none'],
+      description: 'Choose deployment method: ansible (recommended), docker-direct, vm-tomcat, or none'
     )
   }
 
@@ -30,15 +20,15 @@ pipeline {
     WAR_NAME   = 'ABCtechnologies-1.0.war'
     APP_URL_VM = 'http://localhost:8080/ABCtechnologies-1.0/'
 
-    // Docker deploy settings (direct)
+    // Docker deploy settings
     DOCKER_IMAGE     = "igp1-app:${BUILD_NUMBER}"
     DOCKER_CONTAINER = 'igp1-app'
     DOCKER_HOST_PORT = '8082'
     DOCKER_CONT_PORT = '8080'
     APP_URL_DOCKER   = "http://localhost:${DOCKER_HOST_PORT}/"
-    
+
     // Ansible settings
-    ANSIBLE_PLAYBOOK = '/opt/ansible-igp1/deploy-docker.yml'
+    ANSIBLE_PLAYBOOK  = '/opt/ansible-igp1/deploy-docker.yml'
     ANSIBLE_INVENTORY = '/opt/ansible-igp1/inventory.ini'
   }
 
@@ -74,12 +64,26 @@ pipeline {
     }
 
     // -------------------------
-    // VM Tomcat Deploy (existing)
+    // Deployment Method Selection
+    // -------------------------
+    stage('Display Deployment Method') {
+      steps {
+        script {
+          echo "═══════════════════════════════════════════════"
+          echo "Selected Deployment Method: ${params.DEPLOYMENT_METHOD}"
+          echo "═══════════════════════════════════════════════"
+        }
+      }
+    }
+
+    // -------------------------
+    // VM Tomcat Deploy
     // -------------------------
     stage('Stage WAR for Deploy') {
-      when { expression { params.DEPLOY_TO_VM_TOMCAT } }
+      when { expression { params.DEPLOYMENT_METHOD == 'vm-tomcat' } }
       steps {
         sh """
+          set -e
           mkdir -p "${DEPLOY_DIR}"
           cp -f "target/${WAR_NAME}" "${DEPLOY_DIR}/${WAR_NAME}"
         """
@@ -87,38 +91,40 @@ pipeline {
     }
 
     stage('Deploy to VM Tomcat') {
-      when { expression { params.DEPLOY_TO_VM_TOMCAT } }
+      when { expression { params.DEPLOYMENT_METHOD == 'vm-tomcat' } }
       steps {
         sh 'sudo -n /usr/local/bin/deploy_igp1.sh'
       }
     }
 
     stage('Health Check - VM Tomcat') {
-      when { expression { params.DEPLOY_TO_VM_TOMCAT } }
+      when { expression { params.DEPLOYMENT_METHOD == 'vm-tomcat' } }
       steps {
         sh """
+          set -e
           for i in \$(seq 1 12); do
             CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_VM}" || true)
             if [ "\$CODE" = "200" ]; then
-              echo "VM Tomcat health check OK: ${APP_URL_VM}"
+              echo "✓ VM Tomcat health check OK: ${APP_URL_VM}"
               exit 0
             fi
             echo "VM Tomcat not ready yet (HTTP \$CODE). Waiting..."
             sleep 5
           done
-          echo "VM Tomcat health check FAILED: ${APP_URL_VM}"
+          echo "✗ VM Tomcat health check FAILED: ${APP_URL_VM}"
           exit 1
         """
       }
     }
 
     // -------------------------
-    // Docker Direct Deploy (Phase 3)
+    // Docker Direct Deploy
     // -------------------------
     stage('Docker - Build Image') {
-      when { expression { params.DEPLOY_TO_DOCKER } }
+      when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
+          set -euo pipefail
           test -f Dockerfile
           test -f target/${WAR_NAME}
 
@@ -129,9 +135,10 @@ pipeline {
     }
 
     stage('Docker - Run Container') {
-      when { expression { params.DEPLOY_TO_DOCKER } }
+      when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
+          set -euo pipefail
           echo "Stopping/removing any existing container named ${DOCKER_CONTAINER}..."
           docker rm -f "${DOCKER_CONTAINER}" >/dev/null 2>&1 || true
 
@@ -145,21 +152,22 @@ pipeline {
       }
     }
 
-    stage('Health Check - Docker') {
-      when { expression { params.DEPLOY_TO_DOCKER } }
+    stage('Health Check - Docker Direct') {
+      when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
         sh """
+          set -e
           for i in \$(seq 1 18); do
             CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_DOCKER}" || true)
             if [ "\$CODE" = "200" ]; then
-              echo "Docker health check OK: ${APP_URL_DOCKER}"
+              echo "✓ Docker health check OK: ${APP_URL_DOCKER}"
               exit 0
             fi
             echo "Docker app not ready yet (HTTP \$CODE). Waiting..."
             sleep 5
           done
 
-          echo "Docker health check FAILED: ${APP_URL_DOCKER}"
+          echo "✗ Docker health check FAILED: ${APP_URL_DOCKER}"
           echo "Last 200 lines of container logs:"
           docker logs --tail 200 "${DOCKER_CONTAINER}" || true
           exit 1
@@ -168,20 +176,50 @@ pipeline {
     }
 
     // -------------------------
-    // Ansible Deploy (Phase 4 - NEW!)
+    // Ansible Deploy
     // -------------------------
     stage('Deploy with Ansible') {
-      when { expression { params.DEPLOY_WITH_ANSIBLE } }
+      when { expression { params.DEPLOYMENT_METHOD == 'ansible' } }
       steps {
         script {
-          echo "Deploying using Ansible playbook..."
-          sh """
-            ansible-playbook ${ANSIBLE_PLAYBOOK} \\
-              -i ${ANSIBLE_INVENTORY} \\
-              -e "build_number=${BUILD_NUMBER}" \\
-              -e "project_directory=${WORKSPACE}"
-          """
+          echo "═══════════════════════════════════════════════"
+          echo "Deploying using Ansible automation"
+          echo "═══════════════════════════════════════════════"
         }
+        sh """
+          set -euo pipefail
+          ansible-playbook "${ANSIBLE_PLAYBOOK}" \\
+            -i "${ANSIBLE_INVENTORY}" \\
+            -e "build_number=${BUILD_NUMBER}" \\
+            -e "project_directory=${WORKSPACE}"
+        """
+      }
+    }
+
+    stage('Health Check - Ansible') {
+      when { expression { params.DEPLOYMENT_METHOD == 'ansible' } }
+      steps {
+        sh """
+          set -e
+          echo "[INFO] Checking app health after Ansible deployment: ${APP_URL_DOCKER}"
+
+          for i in \$(seq 1 18); do
+            CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_DOCKER}" || true)
+            echo "[INFO] Attempt \$i: HTTP \$CODE"
+
+            if [ "\$CODE" = "200" ]; then
+              echo "✓ Ansible deployment health check OK: ${APP_URL_DOCKER}"
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "✗ Ansible deployment health check FAILED: ${APP_URL_DOCKER}"
+          echo "Last 200 lines of container logs:"
+          docker logs --tail 200 "${DOCKER_CONTAINER}" || true
+          exit 1
+        """
       }
     }
   }
@@ -191,15 +229,23 @@ pipeline {
       junit 'target/surefire-reports/*.xml'
     }
     success {
-      echo "✓ Build and deployment successful!"
       script {
-        if (params.DEPLOY_WITH_ANSIBLE) {
+        echo "═══════════════════════════════════════════════"
+        echo "✓ BUILD AND DEPLOYMENT SUCCESSFUL!"
+        echo "═══════════════════════════════════════════════"
+        if (params.DEPLOYMENT_METHOD == 'ansible') {
           echo "✓ Deployed via Ansible automation"
-        } else if (params.DEPLOY_TO_DOCKER) {
+          echo "✓ Application URL: ${APP_URL_DOCKER}"
+        } else if (params.DEPLOYMENT_METHOD == 'docker-direct') {
           echo "✓ Deployed via direct Docker commands"
-        } else if (params.DEPLOY_TO_VM_TOMCAT) {
+          echo "✓ Application URL: ${APP_URL_DOCKER}"
+        } else if (params.DEPLOYMENT_METHOD == 'vm-tomcat') {
           echo "✓ Deployed to VM Tomcat"
+          echo "✓ Application URL: ${APP_URL_VM}"
+        } else {
+          echo "✓ Build completed successfully (no deployment)"
         }
+        echo "═══════════════════════════════════════════════"
       }
     }
     failure {
