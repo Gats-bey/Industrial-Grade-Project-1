@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: igp1-app
+  labels:
+    app: igp1-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: igp1-app
+  template:
+    metadata:
+      labels:
+        app: igp1-app
+    spec:
+      containers:
+      - name: igp1-app
+        image: igp1-app:14
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
