@@ -17,7 +17,7 @@ spec:
       containers:
       - name: igp1-app
         image: igp1-app:14
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
           name: http
