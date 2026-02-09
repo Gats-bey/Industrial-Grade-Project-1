@@ -9,8 +9,8 @@ pipeline {
   parameters {
     choice(
       name: 'DEPLOYMENT_METHOD',
-      choices: ['ansible', 'docker-direct', 'vm-tomcat', 'none'],
-      description: 'Choose deployment method: ansible (recommended), docker-direct, vm-tomcat, or none'
+      choices: ['kubernetes', 'ansible', 'docker-direct', 'vm-tomcat', 'none'],
+      description: 'Choose deployment method: kubernetes (Phase 5), ansible (Phase 4), docker-direct, vm-tomcat, or none'
     )
   }
 
@@ -28,8 +28,13 @@ pipeline {
     APP_URL_DOCKER   = "http://localhost:${DOCKER_HOST_PORT}/"
 
     // Ansible settings
-    ANSIBLE_PLAYBOOK  = '/opt/ansible-igp1/deploy-docker.yml'
-    ANSIBLE_INVENTORY = '/opt/ansible-igp1/inventory.ini'
+    ANSIBLE_PLAYBOOK_DOCKER = '/opt/ansible-igp1/deploy-docker.yml'
+    ANSIBLE_PLAYBOOK_K8S    = '/opt/ansible-igp1/deploy-k8s.yml'
+    ANSIBLE_INVENTORY       = '/opt/ansible-igp1/inventory.ini'
+    
+    // Kubernetes settings
+    K8S_NODEPORT = '30080'
+    APP_URL_K8S  = "http://localhost:${K8S_NODEPORT}/"
   }
 
   stages {
@@ -171,18 +176,18 @@ pipeline {
     }
 
     // -------------------------
-    // Ansible Deploy
+    // Ansible Docker Deploy
     // -------------------------
-    stage('Deploy with Ansible') {
+    stage('Deploy with Ansible - Docker') {
       when { expression { params.DEPLOYMENT_METHOD == 'ansible' } }
       steps {
         script {
           echo "═══════════════════════════════════════════════"
-          echo "Deploying using Ansible automation"
+          echo "Deploying to Docker using Ansible automation"
           echo "═══════════════════════════════════════════════"
         }
         sh """
-          ansible-playbook "${ANSIBLE_PLAYBOOK}" \\
+          ansible-playbook "${ANSIBLE_PLAYBOOK_DOCKER}" \\
             -i "${ANSIBLE_INVENTORY}" \\
             -e "build_number=${BUILD_NUMBER}" \\
             -e "project_directory=${WORKSPACE}"
@@ -190,7 +195,7 @@ pipeline {
       }
     }
 
-    stage('Health Check - Ansible') {
+    stage('Health Check - Ansible Docker') {
       when { expression { params.DEPLOYMENT_METHOD == 'ansible' } }
       steps {
         sh """
@@ -201,16 +206,66 @@ pipeline {
             echo "[INFO] Attempt \$i: HTTP \$CODE"
 
             if [ "\$CODE" = "200" ]; then
-              echo "✓ Ansible deployment health check OK: ${APP_URL_DOCKER}"
+              echo "✓ Ansible Docker deployment health check OK: ${APP_URL_DOCKER}"
               exit 0
             fi
 
             sleep 5
           done
 
-          echo "✗ Ansible deployment health check FAILED: ${APP_URL_DOCKER}"
+          echo "✗ Ansible Docker deployment health check FAILED: ${APP_URL_DOCKER}"
           echo "Last 200 lines of container logs:"
           docker logs --tail 200 "${DOCKER_CONTAINER}" || true
+          exit 1
+        """
+      }
+    }
+
+    // -------------------------
+    // Kubernetes Deploy (Phase 5 - NEW!)
+    // -------------------------
+    stage('Deploy to Kubernetes with Ansible') {
+      when { expression { params.DEPLOYMENT_METHOD == 'kubernetes' } }
+      steps {
+        script {
+          echo "═══════════════════════════════════════════════"
+          echo "Deploying to Kubernetes using Ansible"
+          echo "Phase 5: Container Orchestration"
+          echo "═══════════════════════════════════════════════"
+        }
+        sh """
+          ansible-playbook "${ANSIBLE_PLAYBOOK_K8S}" \\
+            -i "${ANSIBLE_INVENTORY}" \\
+            -e "build_number=${BUILD_NUMBER}" \\
+            -e "project_directory=${WORKSPACE}"
+        """
+      }
+    }
+
+    stage('Health Check - Kubernetes') {
+      when { expression { params.DEPLOYMENT_METHOD == 'kubernetes' } }
+      steps {
+        sh """
+          echo "[INFO] Checking Kubernetes deployment health: ${APP_URL_K8S}"
+
+          for i in \$(seq 1 30); do
+            CODE=\$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL_K8S}" || true)
+            echo "[INFO] Attempt \$i: HTTP \$CODE"
+
+            if [ "\$CODE" = "200" ]; then
+              echo "✓ Kubernetes deployment health check OK: ${APP_URL_K8S}"
+              kubectl get pods -l app=igp1-app
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "✗ Kubernetes deployment health check FAILED: ${APP_URL_K8S}"
+          echo "Pod status:"
+          kubectl get pods -l app=igp1-app
+          echo "Pod logs:"
+          kubectl logs -l app=igp1-app --tail=100
           exit 1
         """
       }
@@ -226,8 +281,12 @@ pipeline {
         echo "═══════════════════════════════════════════════"
         echo "✓ BUILD AND DEPLOYMENT SUCCESSFUL!"
         echo "═══════════════════════════════════════════════"
-        if (params.DEPLOYMENT_METHOD == 'ansible') {
-          echo "✓ Deployed via Ansible automation"
+        if (params.DEPLOYMENT_METHOD == 'kubernetes') {
+          echo "✓ Deployed to Kubernetes (Phase 5)"
+          echo "✓ Application URL: ${APP_URL_K8S}"
+          echo "✓ Access via NodePort 30080"
+        } else if (params.DEPLOYMENT_METHOD == 'ansible') {
+          echo "✓ Deployed via Ansible automation to Docker"
           echo "✓ Application URL: ${APP_URL_DOCKER}"
         } else if (params.DEPLOYMENT_METHOD == 'docker-direct') {
           echo "✓ Deployed via direct Docker commands"
