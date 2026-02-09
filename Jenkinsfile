@@ -82,6 +82,30 @@ pipeline {
     }
 
     // -------------------------
+    // Build Docker Image (for Kubernetes and Docker deployments)
+    // -------------------------
+    stage('Build Docker Image') {
+      when { 
+        expression { 
+          params.DEPLOYMENT_METHOD == 'kubernetes' || 
+          params.DEPLOYMENT_METHOD == 'docker-direct' 
+        } 
+      }
+      steps {
+        sh """
+          test -f Dockerfile
+          test -f target/${WAR_NAME}
+
+          echo "Building Docker image: ${DOCKER_IMAGE}"
+          docker build -t "${DOCKER_IMAGE}" .
+          
+          echo "✓ Docker image built successfully"
+          docker images | grep igp1-app | head -3
+        """
+      }
+    }
+
+    // -------------------------
     // VM Tomcat Deploy
     // -------------------------
     stage('Stage WAR for Deploy') {
@@ -123,19 +147,6 @@ pipeline {
     // -------------------------
     // Docker Direct Deploy
     // -------------------------
-    stage('Docker - Build Image') {
-      when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
-      steps {
-        sh """
-          test -f Dockerfile
-          test -f target/${WAR_NAME}
-
-          echo "Building image: ${DOCKER_IMAGE}"
-          docker build -t "${DOCKER_IMAGE}" .
-        """
-      }
-    }
-
     stage('Docker - Run Container') {
       when { expression { params.DEPLOYMENT_METHOD == 'docker-direct' } }
       steps {
@@ -222,7 +233,7 @@ pipeline {
     }
 
     // -------------------------
-    // Kubernetes Deploy (Phase 5 - NEW!)
+    // Kubernetes Deploy (Phase 5)
     // -------------------------
     stage('Deploy to Kubernetes with Ansible') {
       when { expression { params.DEPLOYMENT_METHOD == 'kubernetes' } }
