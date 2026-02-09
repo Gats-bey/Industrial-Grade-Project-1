@@ -257,6 +257,7 @@ pipeline {
       when { expression { params.DEPLOYMENT_METHOD == 'kubernetes' } }
       steps {
         sh """
+          export KUBECONFIG=/var/lib/jenkins/.kube/config
           echo "[INFO] Checking Kubernetes deployment health: ${APP_URL_K8S}"
 
           for i in \$(seq 1 30); do
