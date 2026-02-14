@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: igp1-app-metrics
+  namespace: default
+  labels:
+    app: igp1-app
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: igp1-app
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
