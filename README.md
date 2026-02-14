@@ -3,9 +3,8 @@
 
 ## End-to-End DevOps Pipeline with Kubernetes, CI/CD & Observability
 
-**Industrial Grade Project 1 (IGP1)** is a full-stack DevOps implementation that demonstrates a complete, production-style delivery pipeline — from source code to monitored Kubernetes workloads.
+This is a full-stack DevOps implementation that demonstrates a complete, production-style delivery pipeline — from source code to monitored Kubernetes workloads.
 
-This project reflects **real enterprise DevOps practices**, not a tutorial setup.
 
 ---
 
@@ -167,6 +166,7 @@ This project is designed to reflect **real-world DevOps engineering standards** 
 - DevOps / Cloud Engineer roles
 
 **IGP1 — Complete.**
+
 
 
 
