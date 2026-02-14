@@ -1,7 +1,7 @@
 # Industrial Grade Project 1 (IGP1)
 # abctechnologies
 
-## 🚀 End-to-End DevOps Pipeline with Kubernetes, CI/CD & Observability
+## End-to-End DevOps Pipeline with Kubernetes, CI/CD & Observability
 
 **Industrial Grade Project 1 (IGP1)** is a full-stack DevOps implementation that demonstrates a complete, production-style delivery pipeline — from source code to monitored Kubernetes workloads.
 
@@ -167,5 +167,6 @@ This project is designed to reflect **real-world DevOps engineering standards** 
 - DevOps / Cloud Engineer roles
 
 **IGP1 — Complete.**
+
 
 
