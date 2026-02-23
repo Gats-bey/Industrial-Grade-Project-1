@@ -1,305 +1,417 @@
-# IGP1 — Enterprise DevOps Pipeline
-### Post Graduate Program in DevOps | Edureka × Purdue University
+# 🏭 Industrial Grade Project 1 (IGP1)
+### ABC Technologies — Full DevOps Pipeline
 
-**Author:** Adewole Shitta Bey  
-**Company:** ABC Technologies  
-**Status:** ✅ Complete  
-**Period:** January 24 – January 30, 2026
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
+![Phases](https://img.shields.io/badge/Phases-6%2F6-brightgreen)
+![Java](https://img.shields.io/badge/Java-OpenJDK%2021-orange)
+![Maven](https://img.shields.io/badge/Maven-3.8.7-blue)
+![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-red)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
+![Ansible](https://img.shields.io/badge/Ansible-Automated-EE0000?logo=ansible)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-K3s-326CE5?logo=kubernetes)
+![Prometheus](https://img.shields.io/badge/Prometheus-Monitored-E6522C?logo=prometheus)
+![Grafana](https://img.shields.io/badge/Grafana-Visualized-F46800?logo=grafana)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04%20LTS-E95420?logo=ubuntu)
 
 ---
 
-## Overview
+## 📋 Table of Contents
 
-This repository contains the complete source code, pipeline configuration, and infrastructure automation for **Industrial Grade Project 1 (IGP1)** — the capstone project of the Post Graduate Program in DevOps.
-
-The project implements a full, end-to-end enterprise DevOps pipeline for a Java-based retail web application, taking it from raw source code all the way through to a containerised, orchestrated, and monitored production deployment — fully automated via CI/CD.
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Technology Stack](#-technology-stack)
+- [Pipeline Flow](#-pipeline-flow)
+- [Phase Breakdown](#-phase-breakdown)
+- [Service Access Points](#-service-access-points)
+- [Repository Structure](#-repository-structure)
+- [Getting Started](#-getting-started)
+- [Key Design Patterns](#-key-design-patterns)
+- [Live Metrics](#-live-metrics)
+- [Documentation](#-documentation)
 
 ---
 
-## Pipeline Architecture
+## 🔍 Overview
+
+IGP1 is a **production-grade DevOps pipeline** built end-to-end for the ABC Technologies retail application. The project transforms a raw Java source repository into a fully automated, containerised, Kubernetes-orchestrated, and monitored platform — implementing all major DevOps disciplines across six progressive phases.
+
+> **Application:** ABC Technologies Retail Portal  
+> **Stack:** Java → Maven → Jenkins → Docker → Ansible → Kubernetes → Prometheus/Grafana  
+> **Deployment Targets:** VM Tomcat · Docker Container · Kubernetes (2 replicas)  
+> **Monitoring:** Real-time metrics via Prometheus & Grafana dashboards
+
+---
+
+## 🏗️ Architecture
 
 ```
-Developer Push
-      │
-      ▼
-   GitHub ──────────────────────────────────────────────┐
-      │                                                  │
-      ▼                                                  │
-   Jenkins (CI/CD Orchestration)                         │
-      │                                                  │
-      ├──▶ Maven Build & Test ──▶ WAR Package            │
-      │                                                  │
-      ├──▶ [Option] Deploy to VM Tomcat                  │
-      │                                                  │
-      ├──▶ [Option] Docker Build & Run                   │
-      │                                                  │
-      ├──▶ [Option] Ansible Playbook ──▶ Docker Deploy   │
-      │                                                  │
-      └──▶ [Option] Kubernetes (K3s) ──▶ 2 Replicas     │
-                                              │          │
-                                              ▼          │
-                                     Prometheus + Grafana│
-                                     (Monitoring Stack)  │
-                                                         │
-      ◀───────────────────────── SCM Poll (every 5 min) ─┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         DEVELOPER WORKSTATION                       │
+│                                                                     │
+│   Java Source Code  ──►  git push  ──►  GitHub Repository          │
+└─────────────────────────────────┬───────────────────────────────────┘
+                                  │ webhook / poll
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         JENKINS CI/CD  :8081                        │
+│                                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────────────┐ │
+│  │ Checkout │► │  Maven   │► │ Package  │► │   Deploy via        │ │
+│  │ (GitHub) │  │Build+Test│  │   WAR    │  │   Ansible           │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┬──────────┘ │
+└──────────────────────────────────────────────────────┬─┘────────────┘
+                                                       │
+                    ┌──────────────────────────────────┘
+                    │        ANSIBLE PLAYBOOKS
+                    │
+         ┌──────────┴──────────────────────────┐
+         │                                     │
+         ▼                                     ▼
+┌────────────────────┐              ┌──────────────────────────────┐
+│   DOCKER           │              │   KUBERNETES (K3s)           │
+│   igp1-app:TAG     │              │   igp1-app Deployment        │
+│   Port: 8082       │              │   2 Replicas  Port: 30080    │
+└────────────────────┘              └──────────────────────────────┘
+                                              │
+                    ┌─────────────────────────┘
+                    │       MONITORING NAMESPACE
+                    ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  Prometheus :30808   ──►   Grafana :30683                           │
+│  Node Exporter · Kube State Metrics · Alertmanager                  │
+│  ServiceMonitor: igp1-app-metrics (scrape every 30s)                │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-| Category | Technology | Version |
-|---|---|---|
-| Source Control | GitHub | — |
-| Build Tool | Apache Maven | 3.x |
-| CI/CD | Jenkins | Latest |
-| Containerisation | Docker | Latest |
-| Infrastructure Automation | Ansible | 2.16.3 |
-| Container Orchestration | K3s (Kubernetes) | v1.34.3 |
-| Package Manager (K8s) | Helm | v3.20.0 |
-| Metrics Collection | Prometheus | v3.9.1 |
-| Dashboards | Grafana | Latest |
-| Alerting | Alertmanager | Latest |
-| Runtime | OpenJDK | 11.0.29 |
-| Operating System | Ubuntu | 24.04.3 LTS |
-
----
-
-## Project Phases
-
-### Phase 1 — Environment Setup, Build, Test & Deploy to Tomcat
-
-Establishes the foundational environment and proves the application can be built, tested, and deployed reliably before any automation is introduced.
-
-- Ubuntu 24.04 VM with Git, Java 11, Maven installed and verified
-- Maven lifecycle: `compile → test → package`
-- **4 JUnit tests passed, 0 failures**
-- WAR artifact produced: `ABCtechnologies-1.0.war` (6.9 MB)
-- Deployed to Apache Tomcat 10 via `webapps/` auto-deployer
-- Application verified via browser at `http://10.214.99.251:8080/ABCtechnologies-1.0/`
+| Category | Technology | Version | Role |
+|----------|-----------|---------|------|
+| **Source Control** | Git + GitHub | Latest | Code versioning and CI/CD trigger |
+| **Build Tool** | Apache Maven | 3.8.7 | Compile, test, package WAR |
+| **CI/CD** | Jenkins | Latest | Pipeline orchestration |
+| **Containerisation** | Docker | 24.x | Application containerisation |
+| **Automation** | Ansible | 2.16.3 | Infrastructure as Code |
+| **Orchestration** | K3s (Kubernetes) | v1.34.3 | Container orchestration |
+| **Package Manager** | Helm | v3.20.0 | Kubernetes application deployment |
+| **Metrics** | Prometheus | v3.9.1 | Metrics collection and storage |
+| **Visualisation** | Grafana | Latest | Dashboards and alerting |
+| **Alerting** | Alertmanager | Latest | Alert routing and management |
+| **App Server** | Apache Tomcat | 10.1 | Java web application server |
+| **Runtime** | OpenJDK | 21 | Java execution environment |
+| **OS** | Ubuntu | 24.04.3 LTS | Host operating system |
 
 ---
 
-### Phase 2 — Source Control with Git & GitHub
+## 🔄 Pipeline Flow
 
-Places the application under version control and establishes secure, password-less SSH authentication between the development VM and GitHub.
-
-- Git repository initialised; default branch renamed to `main`
-- `.gitignore` configured to exclude `target/` and `.DS_Store`
-- ED25519 SSH key generated and registered with GitHub
-- Remote repository connected and code pushed
-- Repository prepared as the single source of truth for all CI/CD automation
-
----
-
-### Phase 3 — Jenkins CI/CD Pipeline
-
-Implements a fully automated CI/CD pipeline using a declarative `Jenkinsfile` stored in source control (Pipeline as Code).
-
-**Pipeline Stages:**
-
-| Stage | Action |
-|---|---|
-| Checkout | Clone from GitHub via SSH |
-| Build & Test | `mvn -B clean test` — 4 unit tests must pass |
-| Package WAR | `mvn -B package -DskipTests` |
-| Stage Artifact | Copy WAR to `/opt/jenkins-deploy/` |
-| Deploy | Controlled root-owned deploy script |
-| Health Check | `curl` loop — expects HTTP 200 within 50 seconds |
-| Archive | WAR stored as Jenkins build artifact |
-
-**Key design decisions:**
-- Jenkins runs on port `8081` (Tomcat on `8080`) to avoid binding conflicts
-- Least-privilege `sudoers` drop-in — Jenkins can only execute `/usr/local/bin/deploy_igp1.sh`
-- Timestamped `.bak` WAR backup created on every deployment for instant rollback
-- RSA PEM key used for Jenkins GitHub authentication (ED25519 incompatible with Jenkins Git client)
-- Single **choice parameter** (`DEPLOYMENT_METHOD`) prevents conflicting deployments
-
-**Supported deployment targets:**
-
-| Option | Description |
-|---|---|
-| `ansible` | Ansible-automated Docker deployment (recommended) |
-| `docker-direct` | Direct Docker CLI commands |
-| `vm-tomcat` | Traditional VM Tomcat deployment |
-| `none` | Build and test only, no deployment |
-
----
-
-### Phase 4 — Ansible Infrastructure Automation
-
-Introduces Infrastructure as Code (IaC) by replacing direct deployment commands with an idempotent Ansible playbook.
-
-- Ansible 2.16.3 with `community.docker` collection
-- Playbook: `/opt/ansible-igp1/deploy-docker.yml`
-- Validates Dockerfile and WAR exist before deploying
-- Builds Docker image, stops/removes old container, starts new container
-- HTTP health check confirms `200 OK` before marking deployment successful
-- Playbook committed to Git — all infrastructure changes are version-controlled and auditable
-- Jenkins invokes Ansible via pipeline stage; clean separation of CI/CD orchestration from deployment execution
+```
+Code Push to GitHub
+        │
+        ▼
+┌───────────────┐
+│   Checkout    │  Clone main branch via SSH deploy key
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐
+│ Build & Test  │  mvn clean test → 4 unit tests pass
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐
+│  Package WAR  │  mvn package → ABCtechnologies-1.0.war (6.9MB)
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐
+│ Docker Build  │  docker build -t igp1-app:$BUILD_NUMBER
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐
+│Ansible Deploy │  ansible-playbook deploy-k8s.yml
+└──────┬────────┘
+       │
+       ├──► Import image to K3s containerd
+       │
+       ├──► Update deployment.yaml with new tag
+       │
+       ├──► kubectl apply (rolling update, zero downtime)
+       │
+       └──► Wait for 2/2 replicas ready
+               │
+               ▼
+┌───────────────┐
+│ Health Check  │  curl http://localhost:30080 → HTTP 200 ✓
+└──────┬────────┘
+       │
+       ▼
+┌───────────────┐
+│   Prometheus  │  Scrapes pod metrics every 30s via ServiceMonitor
+│   + Grafana   │  Real-time dashboards: CPU, memory, network, disk
+└───────────────┘
+```
 
 ---
 
-### Phase 5 — Kubernetes Orchestration with K3s
+## 📚 Phase Breakdown
 
-Transitions from single-container Docker deployment to full Kubernetes orchestration with high availability and self-healing.
+### ✅ Phase 1 — Environment Setup, Build & Deploy to Tomcat
+> *January 24 – 30, 2026*
 
-- K3s v1.34.3 installed (lightweight, fully Kubernetes-conformant)
-- `kubectl` configured for both `ubuntu` and `jenkins` users
-- Kubernetes manifests: `Deployment` (2 replicas) + `NodePort` Service
-- Ansible K8s playbook automates image import and manifest application
-- **Rolling updates** — zero-downtime deployments on every pipeline run
-- **Self-healing** — Kubernetes automatically restarts failed pods
-- Application accessible at `http://localhost:30080`
-- End-to-end validated: Jenkins Build #19 → running K8s pods confirmed
+Establishes the complete foundation. Ubuntu VM provisioned with Git, Java (OpenJDK 11), and Maven. Java application compiled, 4 unit tests executed and passed, and a 6.9MB WAR artifact produced. Apache Tomcat 10 installed and the application deployed and verified in browser.
 
----
-
-### Phase 6 — Monitoring with Prometheus & Grafana
-
-Implements full observability across both the infrastructure and application layers.
-
-- `kube-prometheus-stack` deployed via Helm (includes Prometheus Operator, Grafana, Alertmanager)
-- `ServiceMonitor` resource configured to scrape application pods at `/metrics` every 30 seconds
-- Live metrics verified via both Grafana dashboards and `kubectl top`
-
-**Node metrics observed:**
-
-| Metric | Value |
-|---|---|
-| CPU Utilisation | 8% (346m cores) |
-| Memory Usage | 79% (3116 MiB) |
-| Disk Usage | 51.4% of 24 GiB |
-
-**Pod metrics observed:**
-
-| Pod | CPU | Memory |
-|---|---|---|
-| `igp1-app-85469959f5-5lj58` | 9m cores | 170 MiB |
-| `igp1-app-85469959f5-fj7jw` | 9m cores | 166 MiB |
+**Key Outcomes:**
+- `mvn clean test` → 4 tests, 0 failures
+- `ABCtechnologies-1.0.war` (6.9MB) produced
+- Application live at `http://10.214.99.251:8080/ABCtechnologies-1.0/`
 
 ---
 
-## Service Access Points
+### ✅ Phase 2 — Source Control with Git & GitHub
+> *January 30 – February 1, 2026*
 
-| Service | URL | Purpose |
-|---|---|---|
-| ABC Technologies App (K8s) | `http://localhost:30080` | Primary deployment |
-| ABC Technologies App (Docker) | `http://localhost:8082` | Docker/Ansible deployment |
-| ABC Technologies App (Tomcat) | `http://localhost:8080` | Traditional VM deployment |
-| Jenkins CI/CD | `http://localhost:8081` | Build pipeline management |
-| Grafana | `http://localhost:30683` | Metrics dashboards |
-| Prometheus | `http://localhost:30808` | Metrics storage & querying |
+Source code placed under Git version control and pushed to GitHub. ED25519 SSH key pair generated for secure, passwordless authentication. `.gitignore` configured to exclude build artifacts. Repository becomes the single source of truth for all CI/CD automation.
+
+**Key Outcomes:**
+- Git repository initialised, `main` branch established
+- ED25519 SSH key registered with GitHub
+- Remote: `git@github.com:Gats-bey/Industrial-Grade-Project-1.git`
 
 ---
 
-## Repository Structure
+### ✅ Phase 3 — Jenkins CI/CD + Docker Integration
+> *February 2 – 5, 2026*
+
+**Part A:** Jenkins declarative pipeline automates the full build-to-Tomcat deployment cycle. A controlled, least-privilege deployment pattern is implemented — Jenkins stages the WAR to `/opt/jenkins-deploy`, and a root-owned script performs the actual Tomcat deployment via a restricted `sudoers` rule.
+
+**Part B:** Docker containerisation introduced alongside Tomcat. Dockerfile created using `tomcat:10.1-jdk21-temurin` base image. Jenkins pipeline extended with Docker build and deploy stages. Application runs on port 8082 as a containerised service.
+
+**Key Outcomes:**
+- Full CI/CD pipeline: checkout → build → test → package → deploy → health check
+- Dual deployment: Tomcat (`:8080`) + Docker (`:8082`)
+- `igp1-app:10` Docker image (483MB) running
+
+---
+
+### ✅ Phase 4 — Ansible Automation
+> *February 7 – 8, 2026*
+
+Ansible introduced as Infrastructure as Code layer. Two playbooks created: `deploy-docker.yml` for Docker deployments and `deploy-k8s.yml` for Kubernetes deployments. Jenkins pipeline updated to trigger Ansible playbooks as the deployment mechanism, abstracting deployment logic from the pipeline itself.
+
+**Key Outcomes:**
+- Ansible playbooks in `/opt/ansible-igp1/`
+- Jenkins pipeline: `ansible-playbook deploy-k8s.yml -e build_number=$BUILD_NUMBER`
+- Idempotent, repeatable deployments
+
+---
+
+### ✅ Phase 5 — Kubernetes Orchestration (K3s)
+> *February 10 – 12, 2026*
+
+K3s single-node Kubernetes cluster installed. Kubernetes manifests created for Deployment (2 replicas), Service (NodePort:30080), and ServiceMonitor. Docker images imported to K3s containerd runtime via custom import script. Rolling updates enabled with zero downtime. Jenkins pipeline updated to support `kubernetes` as a deployment target.
+
+**Key Outcomes:**
+- K3s cluster: 1 node, `control-plane`, `Ready`
+- 2 replicas running with liveness and readiness probes
+- Rolling updates validated (6 ReplicaSets in history)
+- `curl http://localhost:30080` → `Welcome to ABC technologies`
+
+---
+
+### ✅ Phase 6 — Prometheus & Grafana Monitoring
+> *February 14 – 15, 2026*
+
+Complete observability stack deployed via Helm (`kube-prometheus-stack`). Prometheus scrapes metrics from the Kubernetes cluster, Node Exporter, Kube State Metrics, and the IGP1 application pods via a custom ServiceMonitor. Grafana dashboards show real-time CPU, memory, network, and disk metrics. Both Grafana and Prometheus exposed via NodePort.
+
+**Key Outcomes:**
+- 6 monitoring components running in `monitoring` namespace
+- Both IGP1 pods monitored: ~9m CPU, ~168Mi memory each
+- Node metrics: 8% CPU, 79% memory utilisation
+- Grafana accessible at `http://localhost:30683`
+
+---
+
+## 🌐 Service Access Points
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| **Application (Kubernetes)** | `http://localhost:30080` | Primary — 2 replicas, rolling updates |
+| **Application (Docker)** | `http://localhost:8082` | Phase 3 — containerised deployment |
+| **Application (Tomcat VM)** | `http://localhost:8080/ABCtechnologies-1.0/` | Phase 1/2 — traditional deployment |
+| **Jenkins CI/CD** | `http://localhost:8081` | Pipeline management |
+| **Grafana** | `http://localhost:30683` | Monitoring dashboards (admin) |
+| **Prometheus** | `http://localhost:30808` | Metrics query interface |
+
+---
+
+## 📁 Repository Structure
 
 ```
 IGP1/
-├── src/                        # Java application source code
-│   └── main/java/
-│       ├── RetailModule.java
-│       ├── RetailDataImp.java
-│       └── RetailAccessObject.java
-├── src/test/                   # JUnit test classes
-│   └── ProductImpTest.java
-├── Dockerfile                  # Container image definition
-├── Jenkinsfile                 # Declarative CI/CD pipeline (Pipeline as Code)
-├── pom.xml                     # Maven build configuration
-└── ansible/
-    └── deploy-docker.yml       # Ansible deployment playbook
+├── src/
+│   └── main/
+│       ├── java/com/abc/
+│       │   ├── RetailModule.java
+│       │   ├── RetailDataImp.java
+│       │   └── RetailAccessObject.java
+│       └── webapp/
+├── target/
+│   └── ABCtechnologies-1.0.war        # Built by Maven (6.9MB)
+├── k8s-manifests/
+│   ├── deployment.yaml                 # K8s Deployment — 2 replicas
+│   ├── service.yaml                    # NodePort Service — port 30080
+│   └── servicemonitor.yaml             # Prometheus scrape config
+├── Dockerfile                          # tomcat:10.1-jdk21-temurin base
+├── Jenkinsfile                         # Declarative CI/CD pipeline
+└── pom.xml                             # Maven build configuration
+
+/opt/ansible-igp1/
+├── deploy-docker.yml                   # Ansible Docker playbook
+├── deploy-k8s.yml                      # Ansible Kubernetes playbook
+└── inventory.ini                       # Ansible inventory
+
+/usr/local/bin/
+├── deploy_igp1.sh                      # Controlled Tomcat deploy script
+└── k3s_import_igp1_image.sh           # Docker→K3s image import script
 ```
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
-| Tool | Version | Install |
-|---|---|---|
-| Java (OpenJDK) | 11 | `sudo apt install openjdk-11-jdk -y` |
-| Maven | 3.x | `sudo apt install maven -y` |
-| Git | Latest | `sudo apt install git -y` |
-| Docker | Latest | `sudo apt install docker.io -y` |
-| Jenkins | Latest | See [Jenkins install guide](https://www.jenkins.io/doc/book/installing/linux/) |
-| K3s | v1.34.3 | `curl -sfL https://get.k3s.io | sh -` |
-| Ansible | 2.16.3 | Pre-installed on Ubuntu 24.04 |
-| Helm | v3.20.0 | See [Helm install guide](https://helm.sh/docs/intro/install/) |
-
-### Build Locally
-
 ```bash
-# Clone the repository
-git clone git@github.com:YOUR_USERNAME/IGP1.git
-cd IGP1
-
-# Compile, test, and package
-mvn clean test
-mvn package
-
-# Verify the WAR was produced
-ls -lh target/*.war
+# Verify tools are installed
+git --version
+java -version
+mvn -v
+docker --version
+kubectl get nodes
+ansible --version
+helm version
 ```
 
-### Run with Docker
+### Clone and Build
 
 ```bash
-# Build the image
-docker build -t igp1-app:latest .
-
-# Run the container
-docker run -d --name igp1-app -p 8082:8080 igp1-app:latest
-
-# Verify
-curl http://localhost:8082/
+git clone git@github.com:Gats-bey/Industrial-Grade-Project-1.git
+cd Industrial-Grade-Project-1
+mvn clean test          # Run unit tests
+mvn package             # Build WAR artifact
 ```
 
-### Deploy with Ansible
+### Deploy via Jenkins
+
+1. Open Jenkins at `http://localhost:8081`
+2. Open the `igp1-ci` pipeline
+3. Click **Build with Parameters**
+4. Select `DEPLOYMENT_METHOD: kubernetes`
+5. Click **Build**
+
+Pipeline stages: Checkout → Build & Test → Package WAR → Docker Build → Ansible K8s Deploy → Health Check ✅
+
+### Deploy Manually via Ansible
 
 ```bash
-# Run the deployment playbook
-ansible-playbook /opt/ansible-igp1/deploy-docker.yml
+# Deploy to Kubernetes
+sudo -u jenkins ansible-playbook /opt/ansible-igp1/deploy-k8s.yml \
+  -i /opt/ansible-igp1/inventory.ini \
+  -e build_number=<TAG> \
+  -e project_directory=/var/lib/jenkins/workspace/igp1-ci
 
-# Dry run (check mode)
-ansible-playbook /opt/ansible-igp1/deploy-docker.yml --check
+# Deploy to Docker
+sudo -u jenkins ansible-playbook /opt/ansible-igp1/deploy-docker.yml \
+  -i /opt/ansible-igp1/inventory.ini \
+  -e build_number=<TAG>
 ```
 
-### Deploy to Kubernetes
+### Check Running State
 
 ```bash
-# Apply manifests
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
+# Kubernetes
+kubectl get pods -l app=igp1-app
+kubectl get svc igp1-app-service
+kubectl top pods
 
-# Verify pods are running
-kubectl get pods
-kubectl get svc
+# Docker
+docker ps
+curl -I http://localhost:8082/
 
-# Check application
-curl http://localhost:30080/
+# Monitoring
+kubectl get pods -n monitoring
 ```
 
 ---
 
-## CI/CD Trigger
+## 🎯 Key Design Patterns
 
-This pipeline uses **Jenkins SCM Polling** — Jenkins checks this repository every 5 minutes for new commits. Any push to the `main` branch will automatically trigger a full pipeline run.
+### Least-Privilege Deployment
+Jenkins never has direct write access to Tomcat or Kubernetes system paths. All privileged operations are performed by controlled, root-owned scripts via a single restricted `sudoers` rule.
 
-To trigger a build manually: Jenkins UI → Select job → **Build with Parameters** → Choose deployment method → **Build**.
+### Pipeline as Code
+The complete CI/CD pipeline is defined in `Jenkinsfile`, committed to Git alongside source code. Every pipeline change is versioned and traceable.
+
+### Infrastructure as Code
+All deployments are managed via Ansible playbooks. No manual kubectl or Docker commands are required in production — Ansible ensures idempotent, repeatable deployments.
+
+### Dual Deployment Support
+The Jenkins pipeline supports four deployment methods via a single parameter: `kubernetes` · `ansible` · `docker-direct` · `vm-tomcat`. This enables gradual migration and easy rollback.
+
+### Zero-Downtime Rolling Updates
+Kubernetes rolling updates ensure the application remains available during every deployment. Liveness and readiness probes prevent traffic from reaching pods that aren't ready.
 
 ---
 
-## Supplementary Files
+## 📊 Live Metrics
 
-| File | Description |
-|---|---|
-| `IGP1_Documentation2.docx` | Full project documentation across all 6 phases |
-| `IGP1_Commands_Chronological.txt` | Every terminal command executed, in order |
+*Captured from `kubectl top` and Grafana dashboards:*
+
+| Metric | Value |
+|--------|-------|
+| Pod CPU (igp1-app-pod-1) | 9m cores |
+| Pod CPU (igp1-app-pod-2) | 9m cores |
+| Pod Memory (pod-1) | 170 MiB |
+| Pod Memory (pod-2) | 166 MiB |
+| Node CPU utilisation | 8% (346m / 4 cores) |
+| Node Memory utilisation | 79% (3116 MiB / 4 GiB) |
+| Node Disk usage | 51.4% of 24 GiB |
+| Prometheus scrape interval | 30 seconds |
+| Active replicas | 2 / 2 |
+| Deployment rollout history | 6 ReplicaSets |
 
 ---
 
-## Acknowledgements
+## 📄 Documentation
 
-This project was completed as the capstone of the **Post Graduate Program in DevOps**, jointly delivered by **[Edureka](https://www.edureka.co)** and **Purdue University**.
+Full phase-by-phase documentation is available for each stage of the project:
+
+| Document | Phase | Coverage |
+|----------|-------|---------|
+| `IGP1_Phase1_Documentation.pdf` | Phase 1 | Environment setup, Maven build, Tomcat deployment |
+| `IGP1_Phase2_Documentation.pdf` | Phase 2 | Git, GitHub, SSH authentication |
+| `IGP1_Phase3_Documentation.pdf` | Phase 3 | Jenkins CI/CD pipeline + Docker integration |
+| `IGP1_Phase4_Documentation.pdf` | Phase 4 | Ansible automation and IaC |
+| `IGP1_Phase5_Documentation.pdf` | Phase 5 | Kubernetes orchestration with K3s |
+| `IGP1_Phase6_Documentation.pdf` | Phase 6 | Prometheus & Grafana monitoring |
+
+---
+
+## 🏆 Project Outcome
+
+IGP1 demonstrates a complete, production-grade DevOps pipeline covering every stage of the modern software delivery lifecycle:
+
+```
+Source Control → CI/CD → Containerisation → Automation → Orchestration → Observability
+    GitHub     → Jenkins →    Docker      →  Ansible   →  Kubernetes  →  Prometheus/Grafana
+```
+
+The platform supports **automated builds on every commit**, **zero-downtime rolling deployments**, **self-healing containers**, **horizontal scaling**, and **real-time performance monitoring** — the full set of capabilities expected in a modern DevOps environment.
+
+---
+
+*Industrial Grade Project 1 · ABC Technologies · DevOps Team · 2026*
