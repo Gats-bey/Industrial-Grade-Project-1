@@ -323,6 +323,10 @@ Kubernetes rolling updates ensure the application remains available during every
 
 ## 📊 Live Metrics
 
+![Screenshot - K8s_Cluster_Prometheus](./Assets/K8s_Cluster_Prometheus.png)
+
+![Screenshot - Node_explorer](./Assets/Node_explorer.png)
+
 *Captured from `kubectl top` and Grafana dashboards:*
 
 | Metric | Value |
