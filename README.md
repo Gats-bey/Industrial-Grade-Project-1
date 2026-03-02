@@ -33,7 +33,7 @@ IGP1 is a **production-grade DevOps pipeline** built end-to-end. This is my key 
 
 ## 🏗️ Architecture
 
-![IGP1 Architecture](./IGP1 Architecture Diagram.png)
+![IGP1 Architecture](https://github.com/Gats-bey/Industrial-Grade-Project-1/blob/main/IGP1%20Architecture%20Diagram.png)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
