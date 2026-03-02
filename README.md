@@ -22,7 +22,7 @@
 
 ## 🔍 Overview
 
-IGP1 is a **production-grade DevOps pipeline** built end-to-end. This is my key deliverables following the completion of the Post Graduate Program in DevOps by Edureka in collaboration with Purdue University. The project transforms a raw Java source repository into a fully automated, containerised, Kubernetes-orchestrated, and monitored platform — implementing all major DevOps disciplines across six progressive phases.
+IGP1 is a **production-grade DevOps pipeline** built end-to-end. This is my key deliverable following the completion of the Post Graduate Program in DevOps by Edureka in collaboration with Purdue University. The project transforms a raw Java source repository into a fully automated, containerised, Kubernetes-orchestrated, and monitored platform — implementing all major DevOps disciplines across six progressive phases.
 
 > **Application:** ABC Technologies Retail Portal  
 > **Stack:** Java → Maven → Jenkins → Docker → Ansible → Kubernetes → Prometheus/Grafana  
@@ -33,46 +33,11 @@ IGP1 is a **production-grade DevOps pipeline** built end-to-end. This is my key 
 
 ## 🏗️ Architecture
 
+
+
 ![IGP1 Architecture](https://github.com/Gats-bey/Industrial-Grade-Project-1/blob/main/IGP1%20Architecture%20Diagram.png)
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         DEVELOPER WORKSTATION                       │
-│                                                                     │
-│   Java Source Code  ──►  git push  ──►  GitHub Repository          │
-└─────────────────────────────────┬───────────────────────────────────┘
-                                  │ webhook / poll
-                                  ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         JENKINS CI/CD  :8081                        │
-│                                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────────────┐ │
-│  │ Checkout │► │  Maven   │► │ Package  │► │   Deploy via        │ │
-│  │ (GitHub) │  │Build+Test│  │   WAR    │  │   Ansible           │ │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┬──────────┘ │
-└──────────────────────────────────────────────────────┬─┘────────────┘
-                                                       │
-                    ┌──────────────────────────────────┘
-                    │        ANSIBLE PLAYBOOKS
-                    │
-         ┌──────────┴──────────────────────────┐
-         │                                     │
-         ▼                                     ▼
-┌────────────────────┐              ┌──────────────────────────────┐
-│   DOCKER           │              │   KUBERNETES (K3s)           │
-│   igp1-app:TAG     │              │   igp1-app Deployment        │
-│   Port: 8082       │              │   2 Replicas  Port: 30080    │
-└────────────────────┘              └──────────────────────────────┘
-                                              │
-                    ┌─────────────────────────┘
-                    │       MONITORING NAMESPACE
-                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  Prometheus :30808   ──►   Grafana :30683                           │
-│  Node Exporter · Kube State Metrics · Alertmanager                  │
-│  ServiceMonitor: igp1-app-metrics (scrape every 30s)                │
-└─────────────────────────────────────────────────────────────────────┘
-```
+
 
 ---
 
