@@ -1,17 +1,6 @@
 # 🏭 Industrial Grade Project 1 (IGP1)
 ### ABC Technologies — Full DevOps Pipeline
 
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
-![Phases](https://img.shields.io/badge/Phases-6%2F6-brightgreen)
-![Java](https://img.shields.io/badge/Java-OpenJDK%2021-orange)
-![Maven](https://img.shields.io/badge/Maven-3.8.7-blue)
-![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-red)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
-![Ansible](https://img.shields.io/badge/Ansible-Automated-EE0000?logo=ansible)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-K3s-326CE5?logo=kubernetes)
-![Prometheus](https://img.shields.io/badge/Prometheus-Monitored-E6522C?logo=prometheus)
-![Grafana](https://img.shields.io/badge/Grafana-Visualized-F46800?logo=grafana)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04%20LTS-E95420?logo=ubuntu)
 
 ---
 
@@ -33,7 +22,7 @@
 
 ## 🔍 Overview
 
-IGP1 is a **production-grade DevOps pipeline** built end-to-end for the ABC Technologies retail application. The project transforms a raw Java source repository into a fully automated, containerised, Kubernetes-orchestrated, and monitored platform — implementing all major DevOps disciplines across six progressive phases.
+IGP1 is a **production-grade DevOps pipeline** built end-to-end. This is my key deliverables following the completion of the Post Graduate Program in DevOps by Edureka in collaboration with Purdue University. The project transforms a raw Java source repository into a fully automated, containerised, Kubernetes-orchestrated, and monitored platform — implementing all major DevOps disciplines across six progressive phases.
 
 > **Application:** ABC Technologies Retail Portal  
 > **Stack:** Java → Maven → Jenkins → Docker → Ansible → Kubernetes → Prometheus/Grafana  
@@ -414,4 +403,4 @@ The platform supports **automated builds on every commit**, **zero-downtime roll
 
 ---
 
-*Industrial Grade Project 1 · ABC Technologies · DevOps Team · 2026*
+*Industrial Grade Project 1 · ABC Technologies · Adewole Shitta Bey · 2026*
